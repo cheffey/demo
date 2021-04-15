@@ -20,11 +20,20 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import android.app.UiAutomation;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.os.Build;
+import android.os.ParcelFileDescriptor;
+import android.util.Base64;
+import android.util.DisplayMetrics;
+import android.view.Display;
 
+import static android.util.DisplayMetrics.DENSITY_DEFAULT;
 import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
 import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
 import androidx.test.filters.SdkSuppress;
@@ -33,8 +42,12 @@ import androidx.test.uiautomator.By;
 import androidx.test.uiautomator.UiDevice;
 import androidx.test.uiautomator.UiObject2;
 import androidx.test.uiautomator.Until;
+import androidx.test.uiautomator.Util;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -46,7 +59,7 @@ import static org.junit.Assert.assertThat;
  */
 @RunWith(AndroidJUnit4.class)
 @SdkSuppress(minSdkVersion = 18)
-public class ChangeTextBehaviorTest {
+public class ScreenshotTest {
 
     private static final String BASIC_SAMPLE_PACKAGE
             = "com.example.android.testing.uiautomator.BasicSample";
@@ -83,49 +96,23 @@ public class ChangeTextBehaviorTest {
 
     @Test
     public void testScreenshot() {
-        File file = new File("/Users/chef.xie/workspace/capturet.jpg");
+        UiAutomation uia = Util.uiAutomation(mDevice);
         try {
-            mDevice.takeScreenshot(file);
-        }catch (Throwable e){
+            Bitmap bitmap = uia.takeScreenshot();
+            if (bitmap==null){
+                System.out.println("The screenshot fails");
+            }
+        } catch (Throwable e) {
             //The screenshot fails
             e.printStackTrace();
         }
         //after screenshot attempt, UIAutomator crashed and lead other actions fail too
-        mDevice.findObject(By.res(BASIC_SAMPLE_PACKAGE, "editTextUserInput"));
+        UiObject2 input = mDevice.findObject(By.res(BASIC_SAMPLE_PACKAGE, "editTextUserInput"));
+        input.setText(STRING_TO_BE_TYPED);
     }
 
     public void checkPreconditions() {
         assertThat(mDevice, notNullValue());
-    }
-
-//    @Test
-    public void testChangeText_sameActivity() {
-        // Type text and then press the button.
-        mDevice.findObject(By.res(BASIC_SAMPLE_PACKAGE, "editTextUserInput"))
-                .setText(STRING_TO_BE_TYPED);
-        mDevice.findObject(By.res(BASIC_SAMPLE_PACKAGE, "changeTextBt"))
-                .click();
-
-        // Verify the test is displayed in the Ui
-        UiObject2 changedText = mDevice
-                .wait(Until.findObject(By.res(BASIC_SAMPLE_PACKAGE, "textToBeChanged")),
-                        500 /* wait 500ms */);
-        assertThat(changedText.getText(), is(equalTo(STRING_TO_BE_TYPED)));
-    }
-
-    @Test
-    public void testChangeText_newActivity() {
-        // Type text and then press the button.
-        mDevice.findObject(By.res(BASIC_SAMPLE_PACKAGE, "editTextUserInput"))
-                .setText(STRING_TO_BE_TYPED);
-        mDevice.findObject(By.res(BASIC_SAMPLE_PACKAGE, "activityChangeTextBtn"))
-                .click();
-
-        // Verify the test is displayed in the Ui
-        UiObject2 changedText = mDevice
-                .wait(Until.findObject(By.res(BASIC_SAMPLE_PACKAGE, "show_text_view")),
-                        500 /* wait 500ms */);
-        assertThat(changedText.getText(), is(equalTo(STRING_TO_BE_TYPED)));
     }
 
     /**
